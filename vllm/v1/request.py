@@ -124,6 +124,9 @@ class Request:
         else:
             raise ValueError("sampling_params and pooling_params can't both be unset")
 
+        if self.kv_transfer_params is not None and self.trace_headers:
+            self.kv_transfer_params["trace_headers"] = self.trace_headers
+
         self.prompt_token_ids = prompt_token_ids
         self.prompt_embeds = prompt_embeds
         # Per-position mask used in mixed-mode (chat completion with
