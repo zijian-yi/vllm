@@ -918,6 +918,7 @@ class Scheduler(SchedulerInterface):
                     # If loading async, allocate memory and put request
                     # into the WAITING_FOR_REMOTE_KV state.
                     request.status = RequestStatus.WAITING_FOR_REMOTE_KVS
+                    logger.info(f"[decode - scheduler 1] Request {request.request_id} paused and moved to WAITING_FOR_REMOTE_KVS")
                     request.async_kv_load_start_time_ns = time.time_ns()
                     step_skipped_waiting.prepend_request(request)
                     # Set num_computed_tokens even though KVs are not yet loaded.
@@ -2075,6 +2076,8 @@ class Scheduler(SchedulerInterface):
         request.trace_cleanup()
 
         connector_delay_free_blocks, kv_xfer_params = self._connector_finished(request)
+        if kv_xfer_params:
+            logger.info(f"[prefill - scheduler 1] Request {request.request_id} finished prefill, instructed connector to hold blocks for transfer")
         self.encoder_cache_manager.free(request)
         request_id = request.request_id
         self.finished_req_ids.add(request_id)
@@ -2418,6 +2421,7 @@ class Scheduler(SchedulerInterface):
                 return False
             self._update_waiting_for_remote_kv(request)
             request.trace_end_kv_transfer()
+            logger.info(f"[decode - scheduler 2] Request {request.request_id} finished remote pull, promoted back to WAITING")
 
             if request.num_preemptions:
                 request.status = RequestStatus.PREEMPTED
